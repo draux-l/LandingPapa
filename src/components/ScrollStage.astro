@@ -1,0 +1,528 @@
+---
+/**
+ * ScrollStage — the heart of the piece.
+ *
+ * A pinned full-viewport stage where scroll position drives a frame sequence
+ * rendered to a canvas. One frame at a time, no video element, so iOS Safari
+ * scrubs smoothly (see section 3 of the Obsidian spec for why `currentTime` is
+ * not used).
+ *
+ * Frames are served per device: a 24 fps 16:9 set for desktop and a 15 fps
+ * 9:16 centre-cropped set for mobile. Both derive from the same master, so no
+ * clip is ever generated twice.
+ *
+ * All on-screen information lives in one translucent card per scene. There is
+ * no free-floating headline type over the footage.
+ */
+import { CLIPS, EXPORT, SCROLL, buildTimeline } from '../data/scenes';
+import Icon from './Icon.astro';
+import type { IconName } from './icons';
+
+const FRAMES_VERSION = import.meta.env.PUBLIC_FRAMES_VERSION ?? 'v1';
+
+const desktopTimeline = buildTimeline(EXPORT.desktop.fps);
+const mobileTimeline = buildTimeline(EXPORT.mobile.fps);
+
+const pad = (n: number) => String(n).padStart(2, '0');
+
+const stageData = {
+  version: FRAMES_VERSION,
+  totalVh: CLIPS.length * SCROLL.vhPerClip,
+  cardIn: SCROLL.cardIn,
+  cardOut: SCROLL.cardOut,
+  timelines: { desktop: desktopTimeline, mobile: mobileTimeline },
+};
+---
+
+<section id="story" class="stage" data-stage>
+  <div class="pin">
+    <canvas data-canvas aria-hidden="true"></canvas>
+    <div class="scrim" aria-hidden="true"></div>
+
+    <!-- Title card: lives INSIDE the film, so there is no hero/film seam. -->
+    <div class="hero-layer" data-hero>
+      <slot name="hero" />
+    </div>
+
+    <!-- One information card per scene. Nothing else floats over the footage. -->
+    {
+      desktopTimeline.map((scene) => (
+        <article class="card" data-card={scene.index} style={`--accent:${scene.accent}`}>
+          <span class="card-badge">
+            <Icon name={scene.card.icon as IconName} size={22} />
+          </span>
+          <div class="card-body">
+            <p class="card-label">
+              <span class="card-index">{pad(scene.index + 1)}</span>
+              {scene.card.label}
+            </p>
+            <p class="card-value">{scene.card.value}</p>
+            {scene.card.detail && <p class="card-detail">{scene.card.detail}</p>}
+          </div>
+        </article>
+      ))
+    }
+
+    <nav class="rail" aria-label="Escenas">
+      {
+        desktopTimeline.map((scene) => (
+          <button
+            type="button"
+            class="dot"
+            data-dot={scene.index}
+            style={`--accent:${scene.accent}`}
+            aria-label={`${scene.index + 1}. ${scene.title}`}
+          />
+        ))
+      }
+    </nav>
+  </div>
+</section>
+
+<script type="application/json" id="stage-data" set:html={JSON.stringify(stageData)} />
+
+<script>
+  import gsap from 'gsap';
+  import { ScrollTrigger } from 'gsap/ScrollTrigger';
+
+  gsap.registerPlugin(ScrollTrigger);
+
+  type Scene = {
+    index: number;
+    slug: string;
+    frameStart: number;
+    frameCount: number;
+    accent: string;
+  };
+
+  const stage = document.querySelector<HTMLElement>('[data-stage]');
+  const canvas = document.querySelector<HTMLCanvasElement>('[data-canvas]');
+  const dataEl = document.getElementById('stage-data');
+
+  function initStage() {
+    if (!stage || !canvas || !dataEl) return;
+
+    const data = JSON.parse(dataEl.textContent ?? '{}');
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const isMobile = window.matchMedia('(max-width: 820px)').matches;
+    const saveData = (navigator as any).connection?.saveData === true;
+
+    const useMobile = isMobile || saveData;
+    const timeline: Scene[] = useMobile ? data.timelines.mobile : data.timelines.desktop;
+    const device = useMobile ? 'mobile' : 'desktop';
+
+    const ctx = canvas.getContext('2d');
+    const base = `${import.meta.env.PUBLIC_FRAMES_BASE ?? ''}/frames/${data.version}/${device}`;
+
+    const last =
+      timeline[timeline.length - 1].frameStart + timeline[timeline.length - 1].frameCount - 1;
+
+    /** The title card lives for the opening ~4.5% of the film, then leaves for good. */
+    const HERO_FRAMES = Math.max(Math.round(last * 0.045), 1);
+
+    const heroEl = document.querySelector<HTMLElement>('[data-hero]');
+    const cardEls = Array.from(document.querySelectorAll<HTMLElement>('[data-card]'));
+    const dotEls = Array.from(document.querySelectorAll<HTMLElement>('[data-dot]'));
+
+    // ---------------------------------------------------------------------
+    // Frame cache with progressive per-scene loading.
+    // ---------------------------------------------------------------------
+    const cache = new Map<number, HTMLImageElement>();
+    const queued = new Set<number>();
+    let lastDrawn: HTMLImageElement | null = null;
+    let hasDrawnReal = false;
+    let currentFrame = 0;
+
+    const fontSans =
+      getComputedStyle(document.documentElement).getPropertyValue('--font-sans').trim() ||
+      'sans-serif';
+
+    const src = (n: number) => `${base}/f_${String(n).padStart(4, '0')}.webp`;
+
+    function preload(sceneIndex: number) {
+      const scene = timeline[sceneIndex];
+      if (!scene) return;
+      for (let n = scene.frameStart; n < scene.frameStart + scene.frameCount; n++) {
+        if (cache.has(n) || queued.has(n)) continue;
+        queued.add(n);
+        const img = new Image();
+        img.decoding = 'async';
+        img.src = src(n);
+        img.onload = () => {
+          cache.set(n, img);
+          if (Math.round(currentFrame) === n) draw(img);
+        };
+        img.onerror = () => queued.delete(n);
+      }
+    }
+
+    // ---------------------------------------------------------------------
+    // Canvas sizing, capped at roughly 1080p worth of pixels.
+    // ---------------------------------------------------------------------
+    const MAX_PIXELS = 1920 * 1080;
+    let vw = 0;
+    let vh = 0;
+
+    function resize() {
+      vw = window.innerWidth;
+      vh = window.innerHeight;
+      const area = Math.max(vw * vh, 1);
+      const cap = Math.sqrt(MAX_PIXELS / area);
+      const dpr = Math.max(1, Math.min(window.devicePixelRatio || 1, cap));
+      canvas!.width = Math.round(vw * dpr);
+      canvas!.height = Math.round(vh * dpr);
+      canvas!.style.width = `${vw}px`;
+      canvas!.style.height = `${vh}px`;
+      repaint();
+    }
+
+    function draw(img: HTMLImageElement) {
+      if (!ctx || !img.naturalWidth) return;
+      const scale = Math.max(canvas!.width / img.naturalWidth, canvas!.height / img.naturalHeight);
+      const w = img.naturalWidth * scale;
+      const h = img.naturalHeight * scale;
+      ctx.drawImage(img, (canvas!.width - w) / 2, (canvas!.height - h) / 2, w, h);
+      lastDrawn = img;
+      hasDrawnReal = true;
+    }
+
+    function drawPlaceholder(sceneIndex: number, local: number) {
+      if (!ctx || !canvas) return;
+      const scene = timeline[sceneIndex] ?? timeline[0];
+      const mid = Math.max(0.18, Math.min(0.92, 0.3 + local * 0.55));
+
+      const g = ctx.createLinearGradient(0, canvas.height, 0, canvas.height * 0.15);
+      g.addColorStop(0, '#0a0908');
+      g.addColorStop(mid, scene.accent);
+      g.addColorStop(1, '#0a0908');
+      ctx.fillStyle = g;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      ctx.fillStyle = 'rgb(244 239 230 / 0.07)';
+      ctx.font = `600 ${Math.round(canvas.height * 0.44)}px ${fontSans}`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(
+        String(sceneIndex + 1).padStart(2, '0'),
+        canvas.width / 2,
+        canvas.height / 2,
+      );
+    }
+
+    function sceneAtFrame(frame: number): number {
+      let found = 0;
+      for (let i = 0; i < timeline.length; i++) {
+        if (frame >= timeline[i].frameStart) found = i;
+      }
+      return found;
+    }
+
+    function repaint() {
+      if (lastDrawn) {
+        draw(lastDrawn);
+        return;
+      }
+      const n = Math.round(currentFrame);
+      const scene = timeline[sceneAtFrame(n)];
+      const span = Math.max(scene.frameCount - 1, 1);
+      drawPlaceholder(scene.index, (n - scene.frameStart) / span);
+    }
+
+    // ---------------------------------------------------------------------
+    // Reduced motion: no pinning, no scrubbing. The sequence becomes a plain
+    // readable article with every card visible.
+    // ---------------------------------------------------------------------
+    if (reduced) {
+      stage.classList.add('is-static');
+      resize();
+      const first = cache.get(timeline[0].frameStart);
+      if (first) draw(first);
+      timeline.forEach((s) => preload(s.index));
+      cardEls.forEach((el) => el.classList.add('is-on'));
+      return;
+    }
+
+    resize();
+    preload(0);
+
+    // ---------------------------------------------------------------------
+    // Rail state
+    // ---------------------------------------------------------------------
+    let activeScene = -1;
+
+    function setActive(index: number) {
+      if (index === activeScene) return;
+      activeScene = index;
+      dotEls.forEach((el) => {
+        const on = Number(el.dataset.dot) === index;
+        el.classList.toggle('is-active', on);
+        el.setAttribute('aria-current', on ? 'true' : 'false');
+      });
+      const scene = timeline[index];
+      if (scene) {
+        document.documentElement.style.setProperty('--accent', scene.accent);
+        preload(index);
+        preload(index + 1);
+      }
+    }
+
+    setActive(0);
+
+    const state = { frame: 0 };
+
+    gsap.to(state, {
+      frame: last,
+      ease: 'none',
+      snap: 1,
+      scrollTrigger: {
+        trigger: stage,
+        start: 'top top',
+        end: () => `+=${(window.innerHeight * data.totalVh) / 100}`,
+        scrub: 0.5,
+        pin: '.pin',
+        pinSpacing: true,
+        invalidateOnRefresh: true,
+        onToggle: (self) => {
+          document.dispatchEvent(
+            new CustomEvent('stage:pin', { detail: { pinned: self.isActive } }),
+          );
+        },
+      },
+      onUpdate: () => {
+        currentFrame = state.frame;
+        const n = Math.round(currentFrame);
+        const img = cache.get(n);
+
+        if (img) {
+          draw(img);
+        } else if (!hasDrawnReal) {
+          const s = timeline[sceneAtFrame(n)];
+          const span = Math.max(s.frameCount - 1, 1);
+          drawPlaceholder(s.index, (n - s.frameStart) / span);
+        }
+
+        // Title card: fades over the opening of the film, then never returns.
+        const heroT = Math.min(1, n / HERO_FRAMES);
+        if (heroEl) heroEl.style.opacity = String(1 - heroT);
+
+        const sceneIndex = sceneAtFrame(n);
+        setActive(sceneIndex);
+
+        const scene = timeline[sceneIndex];
+        const local = (n - scene.frameStart) / Math.max(scene.frameCount - 1, 1);
+
+        cardEls.forEach((el) => {
+          const isThisScene = Number(el.dataset.card) === sceneIndex;
+          const inWindow = local > data.cardIn && local < data.cardOut;
+          // Scene 1's card waits until the title card is fully gone.
+          const blockedByTitle = sceneIndex === 0 && heroT < 1;
+          el.classList.toggle('is-on', isThisScene && inWindow && !blockedByTitle);
+        });
+      },
+    });
+
+    dotEls.forEach((el) => {
+      el.addEventListener('click', () => {
+        const index = Number(el.dataset.dot);
+        const span = stage.offsetHeight || 1;
+        const target = stage.offsetTop + (span * (index + 0.5)) / timeline.length;
+        window.scrollTo({ top: target, behavior: 'smooth' });
+      });
+    });
+
+    window.addEventListener('resize', () => {
+      resize();
+      ScrollTrigger.refresh();
+    });
+  }
+
+  initStage();
+</script>
+
+<style>
+  .stage {
+    position: relative;
+    background: var(--bg);
+  }
+
+  .pin {
+    position: relative;
+    height: 100svh;
+    width: 100%;
+    overflow: hidden;
+  }
+
+  canvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+  }
+
+  .scrim {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      to top,
+      rgb(10 9 8 / 0.72) 0%,
+      rgb(10 9 8 / 0.3) 38%,
+      rgb(10 9 8 / 0) 72%
+    );
+    pointer-events: none;
+  }
+
+  .hero-layer {
+    position: absolute;
+    inset: 0;
+    z-index: 3;
+    display: flex;
+    align-items: flex-end;
+    padding: 0 var(--gutter) calc(var(--gutter) + env(safe-area-inset-bottom));
+    pointer-events: none;
+  }
+
+  /*
+   * Information card.
+   * Translucent fill and a hairline edge, deliberately WITHOUT backdrop-filter:
+   * the footage behind it is redrawn on every scroll frame, so a blur over that
+   * would eat the frame budget on mobile. A 58% dark fill reads the same and
+   * costs nothing.
+   */
+  .card {
+    position: absolute;
+    left: var(--gutter);
+    bottom: calc(var(--gutter) + env(safe-area-inset-bottom));
+    z-index: 5;
+    display: flex;
+    align-items: flex-start;
+    gap: 0.9rem;
+    width: max-content;
+    max-width: min(29rem, calc(100vw - var(--gutter) * 2));
+    padding: 0.9rem 1.35rem 1rem 0.9rem;
+    border-radius: 1.2rem;
+    background: rgb(10 9 8 / 0.58);
+    border: 1px solid rgb(244 239 230 / 0.14);
+    box-shadow: inset 0 1px 0 rgb(244 239 230 / 0.07);
+    opacity: 0;
+    transform: translateY(10px);
+    transition: opacity 0.5s var(--ease), transform 0.5s var(--ease);
+    pointer-events: none;
+  }
+
+  .card.is-on {
+    opacity: 1;
+    transform: none;
+  }
+
+  .card-badge {
+    flex: 0 0 auto;
+    width: 2.6rem;
+    height: 2.6rem;
+    border-radius: 0.85rem;
+    display: grid;
+    place-items: center;
+    background: rgb(10 9 8 / 0.72);
+    border: 1px solid rgb(244 239 230 / 0.16);
+    color: var(--accent);
+  }
+
+  .card-body {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+    min-width: 0;
+  }
+
+  .card-label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 0;
+    font-size: 0.64rem;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--fg-muted);
+  }
+
+  .card-index {
+    color: var(--accent);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .card-value {
+    margin: 0;
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: clamp(1.15rem, 2.4vw, 1.5rem);
+    line-height: 1.1;
+    letter-spacing: -0.025em;
+    color: var(--fg);
+  }
+
+  .card-detail {
+    margin: 0.15rem 0 0;
+    font-size: var(--step--1);
+    line-height: 1.45;
+    color: var(--fg-muted);
+  }
+
+  .rail {
+    position: absolute;
+    top: 50%;
+    right: max(0.6rem, env(safe-area-inset-right));
+    transform: translateY(-50%);
+    display: none;
+    flex-direction: column;
+    gap: 0.85rem;
+    padding: 0.5rem;
+    z-index: 6;
+  }
+
+  .dot {
+    width: 9px;
+    height: 9px;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: rgb(244 239 230 / 0.28);
+    cursor: pointer;
+    transition: background 0.4s var(--ease), transform 0.4s var(--ease);
+  }
+
+  .dot.is-active {
+    background: var(--accent);
+    transform: scale(1.5);
+  }
+
+  @media (min-width: 820px) {
+    .rail {
+      display: flex;
+    }
+  }
+
+  /* Reduced-motion fallback: the copy becomes a plain readable column. */
+  .stage.is-static .pin {
+    height: auto;
+    padding: var(--section-pad) 0;
+  }
+  .stage.is-static canvas {
+    position: relative;
+    height: 60svh !important;
+  }
+  .stage.is-static .hero-layer {
+    position: relative;
+    padding: 0 var(--gutter) 2rem;
+  }
+  .stage.is-static .card {
+    position: relative;
+    left: auto;
+    bottom: auto;
+    margin: 0 var(--gutter) 1rem;
+    opacity: 1;
+    transform: none;
+    max-width: 100%;
+  }
+  .stage.is-static .rail {
+    display: none;
+  }
+</style>

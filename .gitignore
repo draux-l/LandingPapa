@@ -1,0 +1,21 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+.astro/
+
+# Working media — NEVER commit these (S7). Can reach gigabytes.
+clips-raw/
+norm/
+master/
+frames-in/
+
+# Environment
+.env
+.env.production
+
+# OS / editor
+.DS_Store
+Thumbs.db
+*.log

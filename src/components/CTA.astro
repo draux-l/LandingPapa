@@ -1,0 +1,117 @@
+---
+/**
+ * Closing call to action — paper panel.
+ *
+ * Reference layout: artwork inside the panel on the left, one headline and one
+ * action on the right. The panel closes the film and opens the paper end of the
+ * page, so it shares the footer surface instead of floating on the dark ground.
+ *
+ * NOTE: the artwork is `src/assets/cta.png` (transparent PNG). The logo is still
+ * the temporary mark; swap for `src/assets/logo-header.png` when it arrives.
+ */
+import { Image } from 'astro:assets';
+import ctaArt from '../assets/cta.png';
+import { SITE } from '../data/site';
+---
+
+<section id="apoyo" class="cta" aria-label="Apoyar el proyecto">
+  <div class="wrap">
+    <div class="panel">
+      <div class="art">
+        <Image
+          src={ctaArt}
+          alt=""
+          widths={[280, 520, 900]}
+          sizes="(min-width: 820px) 320px, 62vw"
+          format="webp"
+          loading="lazy"
+          quality={92}
+        />
+      </div>
+
+      <div class="copy">
+        <h2>Apóyanos con una<br />estrellita en GitHub</h2>
+
+        <a class="btn" href={SITE.links.repo} target="_blank" rel="noopener noreferrer">
+          Visitar el repositorio
+        </a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .cta {
+    background: var(--paper);
+    color: var(--ink);
+    padding: clamp(2.5rem, 6vh, 4rem) 0 clamp(3rem, 7vh, 4.5rem);
+  }
+
+  .panel {
+    display: grid;
+    grid-template-columns: 1fr;
+    align-items: center;
+    gap: 1.5rem;
+    padding: clamp(1.5rem, 4vw, 2.75rem);
+    border-radius: 1.6rem;
+    background: var(--paper-sunk);
+  }
+
+  .art {
+    display: flex;
+    justify-content: center;
+  }
+
+  .art img {
+    width: min(230px, 58%);
+    height: auto;
+  }
+
+  .copy {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1.4rem;
+  }
+
+  h2 {
+    margin: 0;
+    font-size: clamp(1.5rem, 3.2vw, 2.35rem);
+    line-height: 1.12;
+    letter-spacing: -0.035em;
+    font-weight: 700;
+    max-width: 18ch;
+    text-wrap: balance;
+  }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    padding: 0.78rem 1.35rem;
+    border-radius: 999px;
+    background: var(--clay);
+    color: #fffaf4;
+    text-decoration: none;
+    font-size: var(--step--1);
+    font-weight: 600;
+    transition: transform 0.2s var(--ease), filter 0.2s var(--ease);
+  }
+
+  .btn:hover {
+    transform: translateY(-1px);
+    filter: brightness(1.06);
+  }
+
+  @media (min-width: 820px) {
+    .panel {
+      grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+      gap: 2.5rem;
+      padding-block: clamp(2rem, 3.5vw, 3rem);
+    }
+
+    .art img {
+      width: min(320px, 100%);
+    }
+  }
+</style>

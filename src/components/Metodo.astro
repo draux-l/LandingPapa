@@ -1,0 +1,204 @@
+---
+/**
+ * "Cómo se hizo" — the backstage section.
+ *
+ * This is the piece that turns the project from "a video with scroll" into a
+ * reproducible method, which is the whole point of publishing it on LinkedIn.
+ * It names the tools honestly and credits the human work separately from the
+ * generated footage.
+ */
+import Icon from './Icon.astro';
+import { SITE } from '../data/site';
+
+const steps = [
+  {
+    n: '01',
+    title: 'El guion',
+    body: 'Siete escenas en descenso continuo: de 1 km sobre las terrazas a 100 µm dentro del tubérculo, y de vuelta por la cocina. El truco no está en los clips: el último frame de cada uno es exactamente el primero del siguiente. Por eso no hay cortes.',
+  },
+  {
+    n: '02',
+    title: 'Los clips',
+    body: 'Cada escena se generó como imagen-a-video a partir de un keyframe propio, en MiniMax H3 a 2K y 16:9. La IA pone el movimiento. La composición, la dirección y los prompts son míos.',
+  },
+  {
+    n: '03',
+    title: 'La web',
+    body: 'ffmpeg convierte el master en dos secuencias WebP —una 16:9 para desktop y otra recortada al centro para móvil—. Un canvas dibuja el frame que pide el scroll, y solo descarga los que vas a ver. Astro y GSAP sostienen la página.',
+  },
+];
+---
+
+<section id="metodo" class="metodo">
+  <div class="wrap">
+    <header class="head">
+      <p class="label eyebrow">Cómo se hizo</p>
+      <h2>Tres pasos,<br />un solo descenso</h2>
+      <p class="intro">
+        No es magia ni un solo prompt afortunado. Es una cadena de decisiones que se pueden
+        repetir.
+      </p>
+    </header>
+
+    <ol class="steps">
+      {
+        steps.map((step) => (
+          <li class="step">
+            <span class="num">{step.n}</span>
+            <div>
+              <h3>{step.title}</h3>
+              <p>{step.body}</p>
+            </div>
+          </li>
+        ))
+      }
+    </ol>
+
+    <div class="foot">
+      <div class="tools">
+        <p class="label">Herramientas</p>
+        <ul>
+          {SITE.tech.map((t) => <li>{t}</li>)}
+        </ul>
+      </div>
+
+      <a class="repo" href={SITE.links.repo} target="_blank" rel="noopener noreferrer">
+        Ver el repositorio
+        <Icon name="external" size={15} />
+      </a>
+    </div>
+
+    <p class="note">
+      Las escenas fueron generadas con IA a partir de prompts propios. El guion, la dirección, el
+      montaje y el código son trabajo humano.
+    </p>
+  </div>
+</section>
+
+<style>
+  .metodo {
+    background: var(--bg);
+    color: var(--fg);
+    padding: var(--section-pad) 0;
+    border-top: 1px solid var(--hairline);
+  }
+
+  .head {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    max-width: 44rem;
+    margin-bottom: clamp(2.5rem, 6vh, 4rem);
+  }
+
+  .eyebrow {
+    margin: 0;
+  }
+
+  h2 {
+    font-size: var(--step-3);
+    line-height: 1;
+    letter-spacing: -0.04em;
+    margin: 0;
+  }
+
+  .intro {
+    margin: 0;
+    color: var(--fg-muted);
+    max-width: 50ch;
+  }
+
+  .steps {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    border-top: 1px solid var(--hairline);
+  }
+
+  .step {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 1.25rem;
+    padding: 1.75rem 0;
+    border-bottom: 1px solid var(--hairline);
+  }
+
+  .num {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 0.95rem;
+    color: var(--amber);
+    padding-top: 0.2rem;
+    font-variant-numeric: tabular-nums;
+  }
+
+  h3 {
+    font-size: var(--step-1);
+    letter-spacing: -0.02em;
+    margin: 0 0 0.4rem;
+  }
+
+  .step p {
+    margin: 0;
+    color: var(--fg-muted);
+    max-width: 58ch;
+  }
+
+  .foot {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 2rem;
+    padding-top: clamp(2rem, 5vh, 3rem);
+  }
+
+  .tools .label {
+    margin: 0 0 0.6rem;
+  }
+
+  .tools ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .tools li {
+    font-size: var(--step--1);
+    padding: 0.3rem 0.7rem;
+    border: 1px solid var(--hairline);
+    border-radius: 999px;
+    color: var(--fg-muted);
+  }
+
+  .repo {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.7rem 1.15rem;
+    border-radius: 999px;
+    border: 1px solid var(--hairline);
+    color: var(--fg);
+    text-decoration: none;
+    font-size: var(--step-0);
+    transition: border-color 0.3s var(--ease);
+  }
+
+  .repo:hover {
+    border-color: var(--amber);
+  }
+
+  .note {
+    margin: clamp(2rem, 5vh, 3rem) 0 0;
+    padding-top: 1.25rem;
+    border-top: 1px solid var(--hairline);
+    font-size: var(--step--1);
+    color: var(--fg-muted);
+    max-width: 62ch;
+  }
+</style>

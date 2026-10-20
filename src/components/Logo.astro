@@ -1,0 +1,39 @@
+---
+/**
+ * Huayro mark — an oblong potato with three eyes.
+ *
+ * Deliberately not a photo, not a gradient, not 3D. It is a one-colour line
+ * mark so it can sit at 20px in a header or at 96px in a poster without ever
+ * looking like a different object. The eyes are what make it read as a potato
+ * rather than an egg, so they stay in every size.
+ */
+interface Props {
+  size?: number;
+  class?: string;
+  /** Filled variant for small sizes (favicons, tight UI). */
+  filled?: boolean;
+}
+
+const { size = 26, class: className, filled = false } = Astro.props;
+---
+
+<svg
+  class={className}
+  width={size}
+  height={size}
+  viewBox="0 0 24 24"
+  fill="none"
+  aria-hidden="true"
+  focusable="false"
+>
+  <path
+    d="M12.4 3.6c4.6.1 7.8 3.4 7.6 7.9-.2 4.6-3.5 7.9-8.1 8-4.6.1-7.9-3-8-7.5-.1-4.6 3.3-8.5 8.5-8.4Z"
+    stroke={filled ? 'none' : 'currentColor'}
+    fill={filled ? 'currentColor' : 'none'}
+    stroke-width="1.7"
+    stroke-linejoin="round"
+  />
+  <circle cx="9.9" cy="10.4" r="1" fill={filled ? 'var(--bg)' : 'currentColor'} />
+  <circle cx="14.3" cy="13.1" r="1" fill={filled ? 'var(--bg)' : 'currentColor'} />
+  <circle cx="9.4" cy="14.9" r="0.8" fill={filled ? 'var(--bg)' : 'currentColor'} />
+</svg>

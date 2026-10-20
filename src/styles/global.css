@@ -1,0 +1,167 @@
+/* ---------------------------------------------------------------------------
+   Design tokens.
+   Principle: the design is a frame, not a painting. The video carries the
+   piece; the UI should be nearly invisible. Near-black ground so frames pop.
+   Palette derived from the potato itself.
+   --------------------------------------------------------------------------- */
+
+:root {
+  /* Surface */
+  --bg: #0a0908;
+  --bg-elevated: #14110f;
+  --fg: #f4efe6;
+  --fg-muted: #a89c8c;
+  --hairline: #2a2521;
+
+  /* Potato palette */
+  --soil-deep: #5c3a22;
+  --soil: #7a5230;
+  --morada: #7b4e8c;
+  --amber: #c9852f;
+  --clay: #c4622b;
+  --cream: #e3d5be;
+
+  /* Paper inversion — used by Datos, CTA and the footer. */
+  --paper: #f4efe6;
+  --paper-surface: #faf6ef;
+  --paper-sunk: #e8ddca;
+  --ink: #0a0908;
+  --ink-soft: #4a423a;
+  --rule: rgb(10 9 8 / 0.14);
+
+  /* Accent — overridden per scene from src/data/scenes.ts */
+  --accent: var(--amber);
+
+  /* Type. Poppins — the geometric sans used in the reference layout. */
+  --font-display: 'Poppins', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-sans: 'Poppins', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: ui-monospace, 'SF Mono', Menlo, monospace;
+
+  --step--1: clamp(0.78rem, 0.74rem + 0.2vw, 0.88rem);
+  --step-0: clamp(0.95rem, 0.9rem + 0.25vw, 1.05rem);
+  --step-1: clamp(1.2rem, 1.1rem + 0.5vw, 1.5rem);
+  --step-2: clamp(1.6rem, 1.3rem + 1.4vw, 2.6rem);
+  --step-3: clamp(2.1rem, 1.5rem + 2.8vw, 4.2rem);
+  --step-4: clamp(2.8rem, 1.5rem + 6vw, 7rem);
+
+  /* Space */
+  --gutter: clamp(1.25rem, 4vw, 4rem);
+  --section-pad: clamp(5rem, 12vh, 11rem);
+  --measure: 62ch;
+
+  /* Motion */
+  --ease: cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+/* --------------------------------------------------------------------------- */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  background: var(--bg);
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-sans);
+  font-size: var(--step-0);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+  /* No synthesized italics or faux weights, ever. */
+  font-synthesis: none;
+}
+
+/*
+ * Film grain.
+ * The clips carry subtle grain (see the style bible). The page carries the
+ * same grain, so the interface and the film read as the same material. This is
+ * what "consistency" means here: material, not geometry. No 3D chrome.
+ */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  pointer-events: none;
+  opacity: 0.045;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 160px 160px;
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-style: normal;
+  letter-spacing: -0.035em;
+  line-height: 1.02;
+  margin: 0;
+  text-wrap: balance;
+}
+
+p {
+  margin: 0 0 1em;
+  max-width: var(--measure);
+}
+
+a {
+  color: inherit;
+}
+
+img,
+canvas,
+video {
+  display: block;
+  max-width: 100%;
+}
+
+/* Visible focus, styled to the palette rather than removed. */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+
+/* Utility: small all-caps label used for eyebrows and the scene counter. */
+.label {
+  font-family: var(--font-sans);
+  font-size: var(--step--1);
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--fg-muted);
+}
+
+.wrap {
+  width: min(100% - var(--gutter) * 2, 78rem);
+  margin-inline: auto;
+}
+
+/* Legibility scrim for text sitting over moving frames. */
+.scrim {
+  background: linear-gradient(
+    to top,
+    rgb(10 9 8 / 0.92) 0%,
+    rgb(10 9 8 / 0.72) 38%,
+    rgb(10 9 8 / 0) 100%
+  );
+}
+
+/* Respect the motion preference: the scroll stage falls back to stills. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}

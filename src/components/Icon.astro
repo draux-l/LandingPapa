@@ -1,0 +1,56 @@
+---
+/**
+ * Interface icons — all Lucide.
+ *
+ * Consistent stroke weight, corner radii and optical size, with no
+ * hand-drawn paths anywhere. Add an icon by importing it and adding a key
+ * to ICONS.
+ *
+ * Brand marks are NOT here: the header and footer use the author's own PNGs.
+ */
+import ArrowDown from '@lucide/astro/icons/arrow-down';
+import ArrowUp from '@lucide/astro/icons/arrow-up';
+import Share2 from '@lucide/astro/icons/share-2';
+import LinkIcon from '@lucide/astro/icons/link';
+import ExternalLink from '@lucide/astro/icons/external-link';
+import Mountain from '@lucide/astro/icons/mountain';
+import Sprout from '@lucide/astro/icons/sprout';
+import Snowflake from '@lucide/astro/icons/snowflake';
+import Utensils from '@lucide/astro/icons/utensils';
+import CookingPot from '@lucide/astro/icons/cooking-pot';
+import Globe from '@lucide/astro/icons/globe';
+import Droplet from '@lucide/astro/icons/droplet';
+import Mail from '@lucide/astro/icons/mail';
+import Layers from '@lucide/astro/icons/layers';
+
+import type { IconName } from './icons';
+
+interface Props {
+  name: IconName;
+  size?: number;
+  class?: string;
+}
+
+const { name, size = 24, class: className } = Astro.props;
+
+const ICONS = {
+  'arrow-down': ArrowDown,
+  'arrow-up': ArrowUp,
+  share: Share2,
+  link: LinkIcon,
+  external: ExternalLink,
+  mountain: Mountain,
+  sprout: Sprout,
+  snowflake: Snowflake,
+  plate: Utensils,
+  bowl: CookingPot,
+  globe: Globe,
+  drop: Droplet,
+  mail: Mail,
+  layers: Layers,
+} as const;
+
+const Component = ICONS[name as keyof typeof ICONS];
+---
+
+<Component size={size} class={className} stroke-width={1.5} aria-hidden="true" />

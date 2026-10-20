@@ -1,0 +1,79 @@
+---
+import '../styles/global.css';
+import { CLIPS, TOTAL_SECONDS } from '../data/scenes';
+
+interface Props {
+  title?: string;
+  description?: string;
+  ogImage?: string;
+}
+
+const {
+  title = 'Papa — el tesoro de los Andes',
+  description =
+    'Un viaje de un solo scroll: de las terrazas andinas al plato. Historia, variedades y cocina de la papa peruana.',
+  ogImage = '/og-image.jpg',
+} = Astro.props;
+
+const canonical = new URL(Astro.url.pathname, Astro.site ?? 'https://example.com');
+---
+
+<!doctype html>
+<html lang="es" style={`--scenes:${CLIPS.length};--total-seconds:${TOTAL_SECONDS}`}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="generator" content={Astro.generator} />
+    <meta name="color-scheme" content="dark" />
+    <meta name="theme-color" content="#0a0908" />
+
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+
+    <!--
+      TODO before deploy: self-host these two faces. Loaded from a CDN right now
+      so the design can be reviewed; a third-party render-blocking request has no
+      place in the final piece.
+    -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap"
+    />
+
+    <!-- Open Graph: this page exists to be shared on LinkedIn. -->
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:image" content={ogImage} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta name="twitter:card" content="summary_large_image" />
+
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  </head>
+
+  <body>
+    <a class="skip" href="#datos">Saltar al contenido</a>
+    <slot />
+
+    <style>
+      .skip {
+        position: absolute;
+        left: -9999px;
+      }
+      .skip:focus {
+        left: var(--gutter);
+        top: var(--gutter);
+        z-index: 100;
+        background: var(--bg-elevated);
+        padding: 0.75rem 1rem;
+        border: 1px solid var(--hairline);
+        border-radius: 0.5rem;
+      }
+    </style>
+  </body>
+</html>

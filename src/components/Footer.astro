@@ -1,0 +1,245 @@
+---
+/**
+ * Footer — paper surface, two zones plus a centred credit strip.
+ *
+ * Reference layout: brand, short description and social buttons on the left;
+ * two link columns on the right; a lighter strip at the bottom with the mark
+ * and the credit line. Contact lives in the social row, so there is no third
+ * column.
+ *
+ * NOTE: the brand mark is the Logo placeholder; swap for
+ * `src/assets/logo-footer.png` when it arrives.
+ */
+import Logo from './Logo.astro';
+import Icon from './Icon.astro';
+import BrandIcon from './BrandIcon.astro';
+import { SITE, NAV } from '../data/site';
+
+const columns = [
+  {
+    title: 'Explora',
+    links: NAV.map((n) => ({ label: n.label, href: n.href })),
+  },
+  {
+    title: 'Fuentes',
+    links: SITE.sources.map((s) => ({ label: s.name, href: s.url, external: true })),
+  },
+];
+---
+
+<footer class="foot">
+  <div class="wrap">
+    <div class="grid">
+      <div class="brand-col">
+        <a class="brand" href="/" aria-label={`${SITE.brand}, inicio`}>
+          <span class="mark"><Logo size={24} /></span>
+          <span class="wordmark">{SITE.brand}</span>
+        </a>
+
+        <p class="desc">{SITE.tagline}</p>
+
+        <ul class="social" aria-label="Redes y contacto">
+          <li>
+            <a href={SITE.links.repo} target="_blank" rel="noopener noreferrer" aria-label="GitHub">
+              <BrandIcon name="github" size={18} />
+            </a>
+          </li>
+          <li>
+            <a href={SITE.links.linkedin} target="_blank" rel="noopener noreferrer" aria-label="LinkedIn">
+              <BrandIcon name="linkedin" size={18} />
+            </a>
+          </li>
+          <li>
+            <a href={SITE.links.instagram} target="_blank" rel="noopener noreferrer" aria-label="Instagram">
+              <BrandIcon name="instagram" size={18} />
+            </a>
+          </li>
+          <li>
+            <a href={`mailto:${SITE.links.email}`} aria-label="Correo">
+              <Icon name="mail" size={18} />
+            </a>
+          </li>
+        </ul>
+      </div>
+
+      {
+        columns.map((col) => (
+          <nav class="col" aria-label={col.title}>
+            <p class="col-title">{col.title}</p>
+            <ul>
+              {col.links.map((link) => (
+                <li>
+                  <a
+                    href={link.href}
+                    {...(link as { external?: boolean }).external
+                      ? { target: '_blank', rel: 'noopener noreferrer' }
+                      : {}}
+                  >
+                    {link.label}
+                    {(link as { external?: boolean }).external && (
+                      <Icon name="external" size={11} />
+                    )}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </nav>
+        ))
+      }
+    </div>
+
+    <div class="credit">
+      <span class="mark mark--small"><Logo size={14} /></span>
+      <p>
+        <strong>{SITE.brand}</strong> está diseñado, construido y gestionado por
+        <strong>{SITE.author.name}</strong>.
+      </p>
+    </div>
+  </div>
+</footer>
+
+<style>
+  .foot {
+    background: var(--paper);
+    color: var(--ink);
+    padding: clamp(3rem, 7vh, 4.5rem) 0 0;
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 2.25rem;
+    padding-bottom: clamp(2.5rem, 6vh, 3.5rem);
+  }
+
+  .brand-col {
+    display: flex;
+    flex-direction: column;
+    gap: 0.9rem;
+    max-width: 28rem;
+  }
+
+  .brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+    color: var(--ink);
+    text-decoration: none;
+  }
+
+  .mark {
+    display: grid;
+    place-items: center;
+    width: 2.35rem;
+    height: 2.35rem;
+    border-radius: 50%;
+    background: var(--cream);
+    color: var(--soil-deep);
+    flex: 0 0 auto;
+  }
+
+  .mark--small {
+    width: 1.5rem;
+    height: 1.5rem;
+  }
+
+  .wordmark {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 1.5rem;
+    letter-spacing: -0.035em;
+  }
+
+  .desc {
+    margin: 0;
+    color: var(--ink-soft);
+    font-size: var(--step-0);
+    line-height: 1.55;
+    max-width: 32ch;
+  }
+
+  .social {
+    list-style: none;
+    padding: 0;
+    margin: 0.3rem 0 0;
+    display: flex;
+    gap: 0.55rem;
+    color: var(--ink);
+  }
+
+  .social a {
+    display: grid;
+    place-items: center;
+    width: 2.2rem;
+    height: 2.2rem;
+    border: 1px solid rgb(10 9 8 / 0.16);
+    border-radius: 0.55rem;
+    color: inherit;
+    transition: border-color 0.2s var(--ease), background 0.2s var(--ease);
+  }
+
+  .social a:hover {
+    border-color: var(--ink);
+    background: var(--paper-surface);
+  }
+
+  .col-title {
+    margin: 0 0 1rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--ink);
+  }
+
+  .col ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+  }
+
+  .col a {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    color: var(--ink-soft);
+    text-decoration: none;
+    font-size: 0.85rem;
+    transition: color 0.2s var(--ease);
+  }
+
+  .col a:hover {
+    color: var(--ink);
+  }
+
+  .credit {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.55rem;
+    padding: 1.4rem 0 calc(1.4rem + env(safe-area-inset-bottom));
+    background: var(--paper-surface);
+    border-top: 1px solid rgb(10 9 8 / 0.08);
+    color: var(--ink);
+  }
+
+  .credit p {
+    margin: 0;
+    font-size: 0.78rem;
+    color: var(--ink-soft);
+    text-align: center;
+  }
+
+  .credit strong {
+    color: var(--ink);
+    font-weight: 600;
+  }
+
+  @media (min-width: 860px) {
+    .grid {
+      grid-template-columns: 1.8fr 0.8fr 0.8fr;
+      gap: 2.5rem;
+    }
+  }
+</style>

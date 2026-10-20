@@ -1,0 +1,480 @@
+---
+/**
+ * Design reference. Not part of the published piece — this page exists so the
+ * typography, palette, components and icon set can be reviewed in a browser
+ * instead of argued about in prose.
+ */
+import Base from '../layouts/Base.astro';
+import { CLIPS, EXPORT, SCROLL, buildTimeline } from '../data/scenes';
+
+const palette = [
+  { token: '--bg', hex: '#0A0908', name: 'Fondo', use: 'El suelo de todo. Casi negro, cálido.' },
+  { token: '--fg', hex: '#F4EFE6', name: 'Texto', use: 'Crema. Nunca blanco puro.' },
+  { token: '--fg-muted', hex: '#A89C8C', name: 'Texto tenue', use: 'Etiquetas, contador, notas.' },
+  { token: '--soil-deep', hex: '#5C3A22', name: 'Tierra profunda', use: 'Escena 3, bajo tierra.' },
+  { token: '--soil', hex: '#7A5230', name: 'Tierra', use: 'Escena 2, la bajada.' },
+  { token: '--morada', hex: '#7B4E8C', name: 'Papa morada', use: 'Escena 4, dentro. El acento del dato.' },
+  { token: '--amber', hex: '#C9852F', name: 'Ámbar', use: 'Amanecer. Acento de apertura y cierre.' },
+  { token: '--clay', hex: '#C4622B', name: 'Barro cocido', use: 'Escena 6, la olla.' },
+  { token: '--cream', hex: '#E3D5BE', name: 'Crema papa', use: 'Escena 5, la papa pelada.' },
+];
+
+const icons = [
+  { id: 'arrow-down', label: 'Deslizar', use: 'Indicador del hero' },
+  { id: 'share', label: 'Compartir', use: 'CTA de LinkedIn' },
+  { id: 'link', label: 'Copiar enlace', use: 'CTA secundario' },
+  { id: 'repo', label: 'Repositorio', use: 'CTA terciario' },
+  { id: 'arrow-up', label: 'Volver arriba', use: 'Aparición tardía' },
+  { id: 'external', label: 'Fuente', use: 'Enlaces del footer' },
+];
+
+const timeline = buildTimeline(EXPORT.desktop.fps);
+const totalFrames = timeline.at(-1)!.frameStart + timeline.at(-1)!.frameCount - 1;
+const desktopMb = ((totalFrames * 80) / 1024).toFixed(0);
+const mobileMb = (
+  ((timeline.at(-1)!.frameStart + timeline.at(-1)!.frameCount - 1) * 0.62) / 1024
+).toFixed(0);
+---
+
+<Base title="Referencia de estilo — Papa">
+  <main class="doc wrap">
+    <header class="doc-head">
+      <p class="label">Referencia de diseño</p>
+      <h1>Papa</h1>
+      <p class="lede">
+        Esta página no se publica. Existe para que veas la tipografía, los colores, los componentes y
+        los íconos antes de que exista un solo clip. Todo acá es el sistema real que usa la landing.
+      </p>
+      <p class="note label">
+        <a href="/">Ver la landing</a> · {CLIPS.length} escenas · {totalFrames} frames desktop
+      </p>
+    </header>
+
+    <!-- ------------------------------------------------------------------ -->
+    <section class="block">
+      <p class="label eyebrow">01 — Paleta</p>
+      <h2>El color sale de la papa</h2>
+      <p class="lede-sm">
+        Sin gradientes decorativos, sin azules corporativos. Cada acento pertenece a un momento del
+        recorrido y la interfaz cambia de color cuando cambia de escena.
+      </p>
+
+      <ul class="swatches">
+        {
+          palette.map((c) => (
+            <li class="swatch">
+              <span class="chip" style={`background:${c.hex}`} />
+              <div>
+                <p class="swatch-name">{c.name}</p>
+                <p class="mono">{c.hex}</p>
+                <p class="mono dim">{c.token}</p>
+                <p class="swatch-use">{c.use}</p>
+              </div>
+            </li>
+          ))
+        }
+      </ul>
+    </section>
+
+    <!-- ------------------------------------------------------------------ -->
+    <section class="block">
+      <p class="label eyebrow">02 — Tipografía</p>
+      <h2>Una sola familia, dos anchos</h2>
+      <p class="lede-sm">
+        Inter Tight para los titulares —sans, sin cursivas, sin adornos— e Inter para la letra
+        chica. El contraste no viene de mezclar familias, viene del tamaño y del peso. Nada de
+        itálicas en toda la pieza: la síntesis de fuente está desactivada.
+      </p>
+
+      <div class="specimens">
+        <div class="specimen">
+          <p class="label dim">Display grande — texto de escena</p>
+          <p class="t-display">De los Andes, para el mundo.</p>
+        </div>
+        <div class="specimen">
+          <p class="label dim">Display media — títulos de sección</p>
+          <p class="t-h2">La papa en datos</p>
+        </div>
+        <div class="specimen">
+          <p class="label dim">Cuerpo</p>
+          <p class="t-body">
+            Cultivada desde el nivel del mar hasta más de 4.000 metros de altura. Cuatro mil
+            variedades nativas, un solo tubérculo.
+
+          </p>
+        </div>
+        <div class="specimen">
+          <p class="label dim">Etiqueta — mayúsculas, tracking abierto</p>
+          <p class="label">Escena 01 · El despertar</p>
+        </div>
+        <div class="specimen">
+          <p class="label dim">Numeral — contador y datos</p>
+          <p class="t-num">4.000</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ------------------------------------------------------------------ -->
+    <section class="block">
+      <p class="label eyebrow">03 — Componentes</p>
+      <h2>Pocos, y cada uno con una razón</h2>
+
+      <div class="grid2">
+        <div class="specimen">
+          <p class="label dim">Contador de escena</p>
+          <p class="counter label"><span>04</span> / 07</p>
+        </div>
+
+        <div class="specimen">
+          <p class="label dim">Barra de progreso — un punto por escena</p>
+          <ul class="rail-inline">
+            {
+              timeline.map((s) => (
+                <li class="dot" style={`--accent:${s.accent}`} class:list={[{ 'is-active': s.index === 3 }]} />
+              ))
+            }
+          </ul>
+        </div>
+
+        <div class="specimen">
+          <p class="label dim">Enlace</p>
+          <p><a class="link" href="#">Ver el proceso</a></p>
+        </div>
+
+        <div class="specimen">
+          <p class="label dim">Botón principal</p>
+          <p><a class="btn" href="#">Compartir en LinkedIn</a></p>
+        </div>
+
+        <div class="specimen">
+          <p class="label dim">Botón fantasma</p>
+          <p><a class="btn btn-ghost" href="#">Copiar enlace</a></p>
+        </div>
+
+        <div class="specimen">
+          <p class="label dim">Separador</p>
+          <hr class="rule" />
+        </div>
+      </div>
+    </section>
+
+    <!-- ------------------------------------------------------------------ -->
+    <section class="block">
+      <p class="label eyebrow">04 — Íconos</p>
+      <h2>Seis, y ninguno decorativo</h2>
+      <p class="lede-sm">
+        Trazo de 1,5 px, heredan el color del texto, nunca rellenos. Un ícono solo aparece cuando
+        reemplaza una palabra que sobra. Si no hace falta, no va.
+      </p>
+
+      <ul class="icon-grid">
+        {
+          icons.map((i) => (
+            <li class="icon-cell">
+              <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                {i.id === 'arrow-down' && <><path d="M12 5v14" /><path d="m6 13 6 6 6-6" /></>}
+                {i.id === 'arrow-up' && <><path d="M12 19V5" /><path d="m6 11 6-6 6 6" /></>}
+                {i.id === 'share' && <><path d="M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7" /><path d="M16 6l-4-4-4 4" /><path d="M12 2v13" /></>}
+                {i.id === 'link' && <><path d="M10 13a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1 1" /><path d="M14 11a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1-1" /></>}
+                {i.id === 'repo' && <><path d="m8 9-4 3 4 3" /><path d="m16 9 4 3-4 3" /><path d="m13 6-2 12" /></>}
+                {i.id === 'external' && <><path d="M14 4h6v6" /><path d="M20 4 10 14" /><path d="M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5" /></>}
+              </svg>
+              <p class="icon-label">{i.label}</p>
+              <p class="mono dim">{i.use}</p>
+            </li>
+          ))
+        }
+      </ul>
+    </section>
+
+    <!-- ------------------------------------------------------------------ -->
+    <section class="block">
+      <p class="label eyebrow">05 — Escala y comportamiento</p>
+      <h2>El recorrido, con datos de verdad</h2>
+      <ul class="facts">
+        <li><span class="mono">{CLIPS.length}</span> escenas</li>
+        <li><span class="mono">{SCROLL.vhPerClip}vh</span> de scroll por escena</li>
+        <li><span class="mono">{Math.round((CLIPS.length * SCROLL.vhPerClip) / 100)}</span> pantallas de recorrido</li>
+        <li><span class="mono">~{desktopMb} MB</span> desktop, progresivo</li>
+        <li><span class="mono">~{mobileMb} MB</span> móvil, progresivo</li>
+        <li><span class="mono">{EXPORT.mobile.width}×{EXPORT.mobile.height}</span> recorte móvil desde el master 2K</li>
+      </ul>
+      <p class="lede-sm">
+        <strong>Las duraciones y los textos son provisorios.</strong> Cambian desde
+        <span class="mono">src/data/scenes.ts</span> y todo lo demás se recalcula solo.
+      </p>
+    </section>
+  </main>
+
+  <style>
+    .doc {
+      padding: var(--section-pad) 0 calc(var(--section-pad) * 1.5);
+    }
+
+    .doc-head {
+      padding-bottom: clamp(3rem, 8vh, 6rem);
+      border-bottom: 1px solid var(--hairline);
+    }
+
+    h1 {
+      font-size: var(--step-4);
+      margin: 0.5rem 0 0.75rem;
+    }
+
+    .block {
+      padding: clamp(3rem, 9vh, 6rem) 0;
+      border-bottom: 1px solid var(--hairline);
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .block:last-child {
+      border-bottom: 0;
+    }
+
+    h2 {
+      font-size: var(--step-2);
+      max-width: 22ch;
+    }
+
+    .eyebrow {
+      color: var(--fg-muted);
+    }
+
+    .lede {
+      font-family: var(--font-display);
+      font-size: var(--step-1);
+      color: var(--fg-muted);
+      max-width: 46ch;
+    }
+
+    .lede-sm {
+      max-width: 52ch;
+      color: var(--fg-muted);
+    }
+
+    .note {
+      margin-top: 1.5rem;
+    }
+
+    .note a {
+      color: var(--accent);
+      text-decoration: none;
+      border-bottom: 1px solid currentColor;
+    }
+
+    .mono {
+      font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+      font-size: 0.82em;
+      letter-spacing: 0;
+    }
+
+    .dim {
+      color: var(--fg-muted);
+    }
+
+    /* Palette ------------------------------------------------------------- */
+    .swatches {
+      list-style: none;
+      padding: 0;
+      margin: 1.5rem 0 0;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
+      gap: 1.5rem 2rem;
+    }
+
+    .swatch {
+      display: flex;
+      gap: 0.9rem;
+      align-items: flex-start;
+    }
+
+    .chip {
+      flex: 0 0 auto;
+      width: 2.75rem;
+      height: 2.75rem;
+      border-radius: 0.375rem;
+      border: 1px solid var(--hairline);
+    }
+
+    .swatch-name {
+      font-weight: 600;
+      margin: 0 0 0.15rem;
+      font-size: 0.95rem;
+    }
+
+    .swatch p {
+      margin: 0;
+      line-height: 1.5;
+    }
+
+    .swatch-use {
+      font-size: var(--step--1);
+      color: var(--fg-muted);
+      margin-top: 0.3rem !important;
+      max-width: 26ch;
+    }
+
+    /* Type ---------------------------------------------------------------- */
+    .specimens {
+      display: flex;
+      flex-direction: column;
+      gap: 2.25rem;
+      margin-top: 1.5rem;
+    }
+
+    .specimen {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .t-display {
+      font-family: var(--font-display);
+      font-size: var(--step-3);
+      line-height: 1.05;
+      letter-spacing: -0.02em;
+      margin: 0;
+      text-wrap: balance;
+    }
+
+    .t-h2 {
+      font-family: var(--font-display);
+      font-size: var(--step-2);
+      margin: 0;
+    }
+
+    .t-body {
+      margin: 0;
+      max-width: 46ch;
+    }
+
+    .t-num {
+      font-family: var(--font-display);
+      font-size: var(--step-3);
+      font-variant-numeric: tabular-nums;
+      margin: 0;
+      color: var(--amber);
+    }
+
+    /* Components ---------------------------------------------------------- */
+    .grid2 {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+      gap: 2.25rem;
+      margin-top: 1.5rem;
+    }
+
+    .counter span {
+      color: var(--accent);
+      font-size: 1.15em;
+    }
+
+    .rail-inline {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      display: flex;
+      gap: 0.85rem;
+      align-items: center;
+      min-height: 2.75rem;
+    }
+
+    .dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: rgb(244 239 230 / 0.28);
+    }
+
+    .dot.is-active {
+      background: var(--accent);
+      transform: scale(1.5);
+    }
+
+    .link {
+      color: var(--accent);
+      text-decoration: none;
+      border-bottom: 1px solid currentColor;
+      padding-bottom: 1px;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.7rem 1.15rem;
+      border-radius: 999px;
+      background: var(--fg);
+      color: var(--bg);
+      text-decoration: none;
+      font-size: var(--step-0);
+      font-weight: 500;
+    }
+
+    .btn-ghost {
+      background: transparent;
+      color: var(--fg);
+      border: 1px solid var(--hairline);
+    }
+
+    .rule {
+      border: 0;
+      border-top: 1px solid var(--hairline);
+      margin: 1.35rem 0;
+      width: 100%;
+    }
+
+    /* Icons --------------------------------------------------------------- */
+    .icon-grid {
+      list-style: none;
+      padding: 0;
+      margin: 1.5rem 0 0;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(10rem, 1fr));
+      gap: 1.75rem;
+    }
+
+    .icon-cell {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      color: var(--fg);
+    }
+
+    .icon-label {
+      margin: 0;
+      font-weight: 500;
+      font-size: 0.95rem;
+    }
+
+    .icon-cell .mono {
+      margin: 0;
+    }
+
+    /* Facts --------------------------------------------------------------- */
+    .facts {
+      list-style: none;
+      padding: 0;
+      margin: 1.5rem 0;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
+      gap: 1.25rem 2rem;
+    }
+
+    .facts li {
+      display: flex;
+      flex-direction: column;
+      gap: 0.2rem;
+      padding-top: 0.85rem;
+      border-top: 1px solid var(--hairline);
+    }
+
+    .facts .mono {
+      font-family: var(--font-display);
+      font-size: var(--step-1);
+      color: var(--fg);
+    }
+  </style>
+</Base>

@@ -1,0 +1,82 @@
+---
+import Base from '../layouts/Base.astro';
+import Header from '../components/Header.astro';
+import ScrollStage from '../components/ScrollStage.astro';
+import Datos from '../components/Datos.astro';
+import Metodo from '../components/Metodo.astro';
+import CTA from '../components/CTA.astro';
+import Footer from '../components/Footer.astro';
+import Icon from '../components/Icon.astro';
+import { CLIPS, TOTAL_SECONDS } from '../data/scenes';
+---
+
+<Base>
+  <Header />
+
+  <ScrollStage>
+    <div slot="hero" class="title-card">
+      <p class="label eyebrow">Conociendo la papa peruana</p>
+
+      <h1>En los Andes<br />del Perú</h1>
+
+      <p class="sub">
+        Siete escalas, un solo descenso: del paisaje a la cocina. {CLIPS.length} escenas,
+        {TOTAL_SECONDS} segundos de recorrido.
+      </p>
+
+      <p class="hint label">
+        <Icon name="arrow-down" size={16} class="hint-mark" />
+        Bajar con la cámara
+      </p>
+    </div>
+  </ScrollStage>
+
+  <Datos />
+
+  <Metodo />
+
+  <CTA />
+
+  <Footer />
+
+  <style>
+    .title-card {
+      display: flex;
+      flex-direction: column;
+      gap: 1.1rem;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.55rem;
+      margin: 0;
+      color: var(--fg-muted);
+    }
+
+    h1 {
+      font-size: var(--step-4);
+      line-height: 0.9;
+      letter-spacing: -0.045em;
+      margin: 0;
+    }
+
+    .sub {
+      margin: 0;
+      max-width: 40ch;
+      color: var(--fg-muted);
+    }
+
+    .hint {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin: 1.25rem 0 0;
+      color: var(--fg);
+    }
+
+    .hint-mark {
+      color: var(--amber);
+    }
+  </style>
+</Base>

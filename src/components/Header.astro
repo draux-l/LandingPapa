@@ -1,0 +1,271 @@
+---
+/**
+ * Header — floating paper capsule.
+ *
+ * Reference layout: brand on the left, navigation in the centre, one solid
+ * action on the right. The capsule floats over the film and uses the paper
+ * surface, so it reads as the first cut of the "light" part of the page.
+ *
+ * Behaviour:
+ *  - present at the top
+ *  - hides on scroll down, returns on scroll up while the film plays
+ *  - stays permanently from the data section onward
+ *
+ * NOTE: the brand is the temporary Logo placeholder. Swap it for
+ * `src/assets/logo-header.png` via <Image> when the file arrives.
+ */
+import Logo from './Logo.astro';
+import { NAV, SITE } from '../data/site';
+---
+
+<header class="hdr" data-header>
+  <div class="hdr-inner">
+    <a class="brand" href="/" aria-label="Huayro, inicio">
+      <span class="mark"><Logo size={26} /></span>
+      <span class="brand-name">Huayro</span>
+    </a>
+
+    <nav class="nav" aria-label="Secciones">
+      {NAV.map((item) => <a href={item.href} data-nav={item.href}>{item.label}</a>)}
+    </nav>
+
+    <div class="right">
+      <div class="lang" role="group" aria-label="Idioma">
+        <button type="button" class="flag on" aria-pressed="true" aria-label="Español">
+          <svg viewBox="0 0 24 16" aria-hidden="true">
+            <rect width="24" height="16" fill="#AA151B" />
+            <rect y="4" width="24" height="8" fill="#F1BF00" />
+          </svg>
+        </button>
+        <button
+          type="button"
+          class="flag off"
+          aria-pressed="false"
+          aria-label="English"
+          title="La versión en inglés se publica cuando el texto esté traducido"
+          disabled
+        >
+          <svg viewBox="0 0 24 16" aria-hidden="true">
+            <rect width="24" height="16" fill="#012169" />
+            <path d="M0 0 24 16M24 0 0 16" stroke="#fff" stroke-width="3.5" />
+            <path d="M0 0 24 16M24 0 0 16" stroke="#C8102E" stroke-width="1.8" />
+            <path d="M12 0v16M0 8h24" stroke="#fff" stroke-width="5.5" />
+            <path d="M12 0v16M0 8h24" stroke="#C8102E" stroke-width="3" />
+          </svg>
+        </button>
+      </div>
+
+      <a class="cta" href={SITE.links.repo} target="_blank" rel="noopener noreferrer">
+        Ver repositorio
+      </a>
+    </div>
+  </div>
+</header>
+
+<script>
+  const header = document.querySelector<HTMLElement>('[data-header]');
+  const links = Array.from(document.querySelectorAll<HTMLAnchorElement>('[data-nav]'));
+
+  if (header) {
+    let lastY = window.scrollY;
+    const story = document.getElementById('story');
+
+    const sections = links
+      .map((link) => {
+        const id = link.dataset.nav?.slice(1);
+        const el = id ? document.getElementById(id) : null;
+        return el ? { link, el } : null;
+      })
+      .filter((x): x is { link: HTMLAnchorElement; el: HTMLElement } => x !== null);
+
+    const sync = () => {
+      const y = window.scrollY;
+      const goingDown = y > lastY + 4;
+      const goingUp = y < lastY - 4;
+      const pastFilm = story ? story.getBoundingClientRect().bottom <= 120 : false;
+
+      if (y < 80 || pastFilm) {
+        header.classList.remove('is-hidden');
+      } else if (goingDown) {
+        header.classList.add('is-hidden');
+      } else if (goingUp) {
+        header.classList.remove('is-hidden');
+      }
+
+      let active = sections[0]?.link;
+      for (const { link, el } of sections) {
+        if (el.getBoundingClientRect().top <= 140) active = link;
+      }
+      links.forEach((l) => l.classList.toggle('is-active', l === active));
+
+      lastY = y;
+    };
+
+    window.addEventListener('scroll', sync, { passive: true });
+    header.classList.remove('is-hidden');
+    sync();
+  }
+</script>
+
+<style>
+  .hdr {
+    position: fixed;
+    inset: 0 0 auto 0;
+    z-index: 50;
+    padding: calc(0.85rem + env(safe-area-inset-top)) 1rem 0;
+    transition: transform 0.4s var(--ease);
+  }
+
+  .hdr.is-hidden {
+    transform: translateY(-160%);
+  }
+
+  /* Paper capsule: ~82% of the viewport, with a real margin against the edges. */
+  .hdr-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.25rem;
+    width: min(100%, 120rem);
+    min-height: clamp(3.5rem, 5vw, 4.4rem);
+    margin-inline: auto;
+    padding: 0.5rem clamp(0.6rem, 1vw, 0.85rem) 0.5rem clamp(0.9rem, 1.4vw, 1.2rem);
+    border-radius: 1rem;
+    background: var(--paper-surface);
+    color: var(--ink);
+    border: 1px solid rgb(10 9 8 / 0.1);
+    box-shadow: 0 22px 50px -30px rgb(0 0 0 / 0.9);
+  }
+
+  @media (min-width: 760px) {
+    .hdr {
+      padding-inline: clamp(1rem, 8.4vw, 8rem);
+    }
+  }
+
+  .brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.55rem;
+    color: var(--ink);
+    text-decoration: none;
+    flex: 0 0 auto;
+  }
+
+  .mark {
+    display: grid;
+    place-items: center;
+    width: clamp(2.1rem, 2.6vw, 2.5rem);
+    height: clamp(2.1rem, 2.6vw, 2.5rem);
+    border-radius: 50%;
+    background: var(--soil-deep);
+    color: var(--cream);
+  }
+
+  .brand-name {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: clamp(1.2rem, 1.6vw, 1.5rem);
+    letter-spacing: -0.035em;
+  }
+
+  .nav {
+    display: none;
+    align-items: center;
+    gap: clamp(1.3rem, 2vw, 1.9rem);
+  }
+
+  .nav a {
+    color: var(--ink-soft);
+    text-decoration: none;
+    font-size: clamp(0.88rem, 1.05vw, 0.98rem);
+    transition: color 0.25s var(--ease);
+  }
+
+  .nav a:hover {
+    color: var(--ink);
+  }
+
+  .nav a.is-active {
+    color: var(--ink);
+    font-weight: 600;
+  }
+
+  .right {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    flex: 0 0 auto;
+  }
+
+  .lang {
+    display: none;
+    align-items: center;
+    gap: 0.3rem;
+  }
+
+  .flag {
+    width: 1.5rem;
+    height: 1.05rem;
+    padding: 0;
+    border: 1px solid rgb(10 9 8 / 0.22);
+    border-radius: 0.18rem;
+    overflow: hidden;
+    background: none;
+    cursor: pointer;
+    opacity: 0.42;
+    transition: opacity 0.2s var(--ease), transform 0.2s var(--ease);
+  }
+
+  .flag svg {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+
+  .flag.on {
+    opacity: 1;
+    box-shadow: 0 0 0 1px rgb(10 9 8 / 0.45);
+  }
+
+  .flag.off {
+    cursor: not-allowed;
+  }
+
+  .flag:not(.off):hover {
+    transform: translateY(-1px);
+  }
+
+  /* The only solid button in the header. Clay, not red: it is the palette red. */
+  .cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.72rem 1.35rem;
+    border-radius: 999px;
+    background: var(--clay);
+    color: #fffaf4;
+    text-decoration: none;
+    font-size: clamp(0.82rem, 1vw, 0.92rem);
+    font-weight: 600;
+    white-space: nowrap;
+    transition: transform 0.2s var(--ease), filter 0.2s var(--ease);
+  }
+
+  .cta:hover {
+    transform: translateY(-1px);
+    filter: brightness(1.06);
+  }
+
+  @media (min-width: 780px) {
+    .lang {
+      display: flex;
+    }
+  }
+
+  @media (min-width: 940px) {
+    .nav {
+      display: flex;
+    }
+  }
+</style>

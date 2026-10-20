@@ -1,0 +1,9 @@
+{
+  "extends": "astro/tsconfigs/strict",
+  "include": [".astro/types.d.ts", "**/*.ts", "**/*.astro"],
+  "exclude": ["dist", "node_modules", "norm", "master", "clips-raw", "frames-in"],
+  "compilerOptions": {
+    "strictNullChecks": true,
+    "verbatimModuleSyntax": true
+  }
+}
